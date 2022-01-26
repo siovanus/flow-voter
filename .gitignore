@@ -1,0 +1,6 @@
+.vscode
+Log
+db
+*.json
+*.dat
+main
