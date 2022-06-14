@@ -1,6 +1,7 @@
 .vscode
-Log
 db
 *.json
 *.dat
 main
+.idea
+flow-voter
