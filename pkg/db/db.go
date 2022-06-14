@@ -94,10 +94,10 @@ func (w *BoltDB) GetFlowHeight() uint64 {
 	return h
 }
 
-func (w *BoltDB) UpdatePolyHeight(h uint32) error {
+func (w *BoltDB) UpdatePolyHeight(h uint64) error {
 
 	raw := make([]byte, 4)
-	binary.LittleEndian.PutUint32(raw, h)
+	binary.LittleEndian.PutUint64(raw, h)
 
 	return w.db.Update(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket(BucketHeight)
@@ -105,9 +105,9 @@ func (w *BoltDB) UpdatePolyHeight(h uint32) error {
 	})
 }
 
-func (w *BoltDB) GetPolyHeight() uint32 {
+func (w *BoltDB) GetPolyHeight() uint64 {
 
-	var h uint32
+	var h uint64
 	_ = w.db.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket(BucketHeight)
 		raw := bkt.Get(PolyHeightKey)
@@ -115,7 +115,7 @@ func (w *BoltDB) GetPolyHeight() uint32 {
 			h = 0
 			return nil
 		}
-		h = binary.LittleEndian.Uint32(raw)
+		h = binary.LittleEndian.Uint64(raw)
 		return nil
 	})
 	return h

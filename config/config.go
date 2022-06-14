@@ -27,7 +27,7 @@ import (
 
 type Config struct {
 	sync.Once
-	PolyConfig       PolyConfig
+	ZionConfig       ZionConfig
 	FlowConfig       FlowConfig
 	ForceConfig      ForceConfig
 	BoltDbPath       string
@@ -46,11 +46,10 @@ func (c *Config) IsWhitelistMethod(method string) bool {
 	return c.whitelistMethods[method]
 }
 
-type PolyConfig struct {
-	RestURL                 string
-	EntranceContractAddress string
-	WalletFile              string
-	WalletPwd               string
+type ZionConfig struct {
+	RestURL             []string
+	ECCMContractAddress string
+	NodeKey             string
 }
 
 type FlowConfig struct {
@@ -60,7 +59,7 @@ type FlowConfig struct {
 }
 
 type ForceConfig struct {
-	PolyHeight uint32
+	PolyHeight uint64
 	FlowHeight uint64
 }
 

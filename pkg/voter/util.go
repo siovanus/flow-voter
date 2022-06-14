@@ -19,15 +19,19 @@
 package voter
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ontio/ontology-crypto/ec"
 	"github.com/ontio/ontology-crypto/keypair"
-	"github.com/polynetwork/poly/common"
 )
 
-func polyPrivateKey2Hex(pri keypair.PrivateKey) []byte {
+func zionPrivateKey2Hex(pri keypair.PrivateKey) []byte {
 	switch t := pri.(type) {
 	case *ec.PrivateKey:
 		switch t.Algorithm {
@@ -55,36 +59,54 @@ func randIdx(size int) int {
 	return int(rand.Uint32()) % size
 }
 
-func parseAuditpath(path []byte) ([]byte, []byte, [][32]byte, error) {
-	source := common.NewZeroCopySource(path)
-	/*
-		l, eof := source.NextUint64()
-		if eof {
-			return nil, nil, nil, nil
-		}
-	*/
-	value, eof := source.NextVarBytes()
-	if eof {
-		return nil, nil, nil, nil
-	}
-	size := int((source.Size() - source.Pos()) / common.UINT256_SIZE)
-	pos := make([]byte, 0)
-	hashs := make([][32]byte, 0)
-	for i := 0; i < size; i++ {
-		f, eof := source.NextByte()
-		if eof {
-			return nil, nil, nil, nil
-		}
-		pos = append(pos, f)
+type heightReq struct {
+	JSONRPC string   `json:"jsonrpc"`
+	Method  string   `json:"method"`
+	Params  []string `json:"params"`
+	ID      uint     `json:"id"`
+}
 
-		v, eof := source.NextHash()
-		if eof {
-			return nil, nil, nil, nil
-		}
-		var onehash [32]byte
-		copy(onehash[:], (v.ToArray())[0:32])
-		hashs = append(hashs, onehash)
+type heightRep struct {
+	JSONRPC string `json:"jsonrpc"`
+	Result  string `json:"result"`
+	ID      uint   `json:"id"`
+}
+
+func zionGetCurrentHeight(url string) (height uint64, err error) {
+	req := &heightReq{
+		JSONRPC: "2.0",
+		Method:  "eth_blockNumber",
+		Params:  make([]string, 0),
+		ID:      1,
+	}
+	data, _ := json.Marshal(req)
+
+	body, err := jsonRequest(url, data)
+	if err != nil {
+		return
 	}
 
-	return value, pos, hashs, nil
+	var resp heightRep
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return
+	}
+
+	height, err = strconv.ParseUint(resp.Result, 0, 64)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func jsonRequest(url string, data []byte) (result []byte, err error) {
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
 }
